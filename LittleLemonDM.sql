@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.36, for Win64 (x86_64)
 --
--- Host: 127.0.0.1    Database: littlelemondm
+-- Host: localhost    Database: littlelemondm
 -- ------------------------------------------------------
 -- Server version	8.0.36
 
@@ -40,6 +40,7 @@ CREATE TABLE `bookings` (
 
 LOCK TABLES `bookings` WRITE;
 /*!40000 ALTER TABLE `bookings` DISABLE KEYS */;
+INSERT INTO `bookings` VALUES (1,1,'2022-10-09 00:00:00',5,2),(2,3,'2022-11-12 00:00:00',3,2),(3,2,'2022-10-11 00:00:00',2,2),(4,1,'2022-10-13 00:00:00',2,2),(5,1,'2022-10-18 00:00:00',5,2);
 /*!40000 ALTER TABLE `bookings` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -66,6 +67,7 @@ CREATE TABLE `customers` (
 
 LOCK TABLES `customers` WRITE;
 /*!40000 ALTER TABLE `customers` DISABLE KEYS */;
+INSERT INTO `customers` VALUES (1,'Ariel','Del Risco','7863703966','aaaaaaaaaa'),(2,'Rosi','Colmenares','7863703967','aaaaaaaaaa'),(3,'Adriel;','Alvarez','7863703968','aaaaaaaaaa');
 /*!40000 ALTER TABLE `customers` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -203,6 +205,105 @@ SET character_set_client = @saved_cs_client;
 --
 -- Dumping routines for database 'littlelemondm'
 --
+/*!50003 DROP PROCEDURE IF EXISTS `AddBooking` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `AddBooking`(bID INT, cID INT, bookingDate date, tableNo INT)
+BEGIN
+	DECLARE bookingIDcheck INT;
+    DECLARE datecheck date;
+	DECLARE tablecheck INT;
+	
+    SET bookingIDcheck = (select BookingID from Bookings where bookingID = bID LIMIT 1);
+    SET datecheck = (select Date from Bookings where Date = bookingDate LIMIT 1);
+	SET tablecheck = (select TableNumber From Bookings where TableNumber = tableNo LIMIT 1);
+        
+	IF (datecheck = bookingDate and tablecheck = tableNo)
+		THEN select CONCAT("Table " , tableNo, " is already booked - booking not created") AS BookingStatus;
+	ELSEIF (bookingIDcheck = bID)
+		THEN select CONCAT("Table " , tableNo, " is free but the BookingID number can not be reapeted - booking not created") AS BookingStatus;
+	ELSE 
+		INSERT INTO Bookings(BookingID, Date, TableNumber, CustomerID, NumberOFGuest)
+			VALUES (bID, bookingDate, tableNo, cID, 2);
+		select CONCAT("Table " , tableNo, " is booked - booking compleated") AS BookingStatus;
+	end if;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `AddValidBooking` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `AddValidBooking`(bookingDate date, tableNo INT)
+BEGIN
+	DECLARE IDmax INT;
+    DECLARE datecheck date;
+	DECLARE tablecheck INT;
+	
+    start transaction;
+    SET IDmax = (select MAX(BookingID) from Bookings);
+    SET datecheck = (select Date from Bookings where Date = bookingDate LIMIT 1);
+	SET tablecheck = (select TableNumber From Bookings where TableNumber = tableNo LIMIT 1);
+        
+	IF (datecheck = bookingDate and tablecheck = tableNo)
+		THEN select CONCAT("Table " , tableNo, " is already booked - booking cancelled") AS BookingStatus;
+        rollback;
+	ELSE 
+		INSERT INTO Bookings(BookingID, Date, TableNumber, CustomerID, NumberOFGuest)
+			VALUES (IDmax + 1, bookingDate, tableNo, 1, 2);
+		select CONCAT("Table " , tableNo, " is booked - booking compleated") AS BookingStatus;
+        commit;
+	end if;
+    
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CancelBooking` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CancelBooking`(bID INT)
+BEGIN
+	DECLARE bookingIDcheck INT;
+    SET bookingIDcheck = (select BookingID from Bookings where bookingID = bID LIMIT 1);
+    
+    IF(bookingIDcheck = bID)
+		THEN delete from Bookings where BookingID = bID;
+			select CONCAT("Booking ", bID, " cancelled") AS Conifrmation;
+	ELSE 
+		select CONCAT("BookingID number does not exists") AS Conifrmation;
+	END IF;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `CancelOrder` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -223,6 +324,34 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `CheckBooking` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `CheckBooking`(bookingDate date, tableNo INT)
+BEGIN
+		DECLARE datecheck date;
+		DECLARE tablecheck INT;
+        
+        SET datecheck = (select Date from Bookings where Date = bookingDate LIMIT 1);
+		SET tablecheck = (select TableNumber From Bookings where TableNumber = tableNo LIMIT 1);
+        
+        IF (datecheck = bookingDate and tablecheck = tableNo)
+			THEN select CONCAT("Table " , tableNo, " is already booked") AS BookingStatus;
+		ELSE select CONCAT("Table " , tableNo, " is free") AS BookingStatus;
+		end if;
+	END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `GetMaxQuantity` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -237,6 +366,33 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `GetMaxQuantity`()
 BEGIN
 		select MAX(Quantity) AS 'Max Quantity in Orders'from Orders;
 	END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `UpdateBooking` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateBooking`(bID INT, changeDate date)
+BEGIN
+	DECLARE bookingIDcheck INT;
+    SET bookingIDcheck = (select BookingID from Bookings where bookingID = bID LIMIT 1);
+    
+    IF(bookingIDcheck = bID)
+		THEN update Bookings SET Date = changeDate where BookingID = bID;
+			select CONCAT("Booking ", bID, " updated") AS Conifrmation;
+	ELSE 
+		select CONCAT("BookingID number does not exists") AS Conifrmation;
+	END IF;
+END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
@@ -270,4 +426,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-04-23 20:14:52
+-- Dump completed on 2024-04-26 11:00:50
